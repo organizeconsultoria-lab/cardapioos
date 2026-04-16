@@ -1,0 +1,90 @@
+-- =====================================================
+-- CardápioOS — SQL Setup para Supabase
+-- Cole TUDO isso no SQL Editor do Supabase e clique RUN
+-- =====================================================
+
+create table if not exists empresas (
+  id uuid default gen_random_uuid() primary key,
+  nome text not null,
+  tipo text default 'Restaurante',
+  cidade text,
+  tel text,
+  endereco text,
+  footer text default 'Obrigado pela preferência!',
+  taxa numeric default 10,
+  logo text,
+  suite_prefix text default 'Suite',
+  created_at timestamp with time zone default now()
+);
+
+create table if not exists categorias (
+  id uuid default gen_random_uuid() primary key,
+  empresa_id uuid references empresas(id) on delete cascade,
+  nome text not null,
+  emoji text default '📁',
+  created_at timestamp with time zone default now()
+);
+
+create table if not exists produtos (
+  id uuid default gen_random_uuid() primary key,
+  empresa_id uuid references empresas(id) on delete cascade,
+  categoria_id uuid references categorias(id) on delete set null,
+  nome text not null,
+  descricao text,
+  emoji text default '🍽️',
+  preco numeric not null default 0,
+  custo numeric default 0,
+  estoque integer default 0,
+  estoque_min integer default 0,
+  foto text,
+  ativo boolean default true,
+  created_at timestamp with time zone default now()
+);
+
+create table if not exists comandas (
+  id uuid default gen_random_uuid() primary key,
+  empresa_id uuid references empresas(id) on delete cascade,
+  nome text not null,
+  suite text not null,
+  whatsapp text,
+  observacoes text,
+  ativo boolean default true,
+  aberta_em timestamp with time zone default now(),
+  fechada_em timestamp with time zone
+);
+
+create table if not exists pedidos (
+  id uuid default gen_random_uuid() primary key,
+  empresa_id uuid references empresas(id) on delete cascade,
+  comanda_id uuid references comandas(id) on delete cascade,
+  items jsonb not null default '[]',
+  total numeric not null default 0,
+  status text default 'pendente',
+  observacao text,
+  pagamento text,
+  desconto numeric default 0,
+  criado_em timestamp with time zone default now()
+);
+
+-- Habilitar Row Level Security
+alter table empresas enable row level security;
+alter table categorias enable row level security;
+alter table produtos enable row level security;
+alter table comandas enable row level security;
+alter table pedidos enable row level security;
+
+-- Políticas de acesso público (necessário para o sistema funcionar sem login)
+drop policy if exists "acesso_total_empresas" on empresas;
+drop policy if exists "acesso_total_categorias" on categorias;
+drop policy if exists "acesso_total_produtos" on produtos;
+drop policy if exists "acesso_total_comandas" on comandas;
+drop policy if exists "acesso_total_pedidos" on pedidos;
+
+create policy "acesso_total_empresas" on empresas for all using (true) with check (true);
+create policy "acesso_total_categorias" on categorias for all using (true) with check (true);
+create policy "acesso_total_produtos" on produtos for all using (true) with check (true);
+create policy "acesso_total_comandas" on comandas for all using (true) with check (true);
+create policy "acesso_total_pedidos" on pedidos for all using (true) with check (true);
+
+-- Confirmar execução
+select 'CardapioOS: tabelas criadas com sucesso!' as resultado;
